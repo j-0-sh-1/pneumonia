@@ -4,4 +4,7 @@ numpy
 opencv-python
 pandas
 plotly
-gdown
+pillow
+pymongo
+gridfs
+fpdf
