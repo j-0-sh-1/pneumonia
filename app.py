@@ -16,6 +16,28 @@ import gridfs  # Add this line
 from fpdf import FPDF
 
 # ---------------------------
+# MongoDB Connection Setup
+def check_mongodb_connection():
+    try:
+        client.admin.command('ping')  # Simple command to check connection
+        return True
+    except Exception as e:
+        return False
+
+mongo_uri = "mongodb+srv://joshuailangovansamuel:HHXm1xKAsKxZtQ6I@cluster0.pbvcd.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+client = MongoClient(mongo_uri)
+db = client['pneumonia']
+fs = gridfs.GridFS(db)
+patients_collection = db['patients']
+classifications_collection = db['classifications']
+
+if check_mongodb_connection():
+    st.success("Connected to MongoDB successfully!")
+else:
+    st.error("Failed to connect to MongoDB. Please check your connection.")
+    st.stop()
+
+# ---------------------------
 # Load the pre-trained model
 @st.cache_resource
 def load_model():
@@ -44,30 +66,18 @@ def integrated_gradients(model, x, target_class_idx=0, baseline=None, steps=50):
     return integrated_grad.numpy().squeeze()
 
 # ---------------------------
-# Image Processing Function (for classification)
+# Image Processing Function
 def process_image_file(file_bytes):
     file_arr = np.asarray(bytearray(file_bytes), dtype=np.uint8)
     cv2_img = cv2.imdecode(file_arr, cv2.IMREAD_COLOR)
-    cv2_img = cv2.resize(cv2_img, (150,150))
+    cv2_img = cv2.resize(cv2_img, (150, 150))
     rgb_img = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2RGB)
-    img_pil = image.array_to_img(rgb_img)
-    img_pil = img_pil.resize((150,150))
-    x = image.img_to_array(img_pil)
+    x = image.img_to_array(rgb_img) / 255.0
     x = np.expand_dims(x, axis=0)
-    x /= 255.0
     return x, rgb_img
 
 # ---------------------------
-# MongoDB Connection Setup
-mongo_uri = "mongodb+srv://joshuailangovansamuel:HHXm1xKAsKxZtQ6I@cluster0.pbvcd.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-client = MongoClient(mongo_uri)
-db = client['pneumonia']
-patients_collection = db['patients']
-classifications_collection = db['classifications']
-fs = gridfs.GridFS(db)
-
-# ---------------------------
-# Define a simple PDF report generator using FPDF
+# PDF Report Generator
 def generate_pdf_report(patient, classification_result, confidence):
     pdf = FPDF()
     pdf.add_page()
@@ -79,13 +89,12 @@ def generate_pdf_report(patient, classification_result, confidence):
     pdf.ln(10)
     pdf.cell(200, 10, txt=f"Classification: {classification_result}", ln=4, align='L')
     pdf.cell(200, 10, txt=f"Confidence: {confidence:.2f}", ln=5, align='L')
-    # Optionally, you can add more info here (e.g., integrated gradients summary)
     pdf_buffer = BytesIO()
-    pdf.output(pdf_buffer)
+    pdf.output(pdf_buffer, dest='S')  # Corrected PDF output
     return pdf_buffer.getvalue()
 
 # ---------------------------
-# Create two tabs: one for uploading data and one for processing/generating reports
+# Streamlit UI
 tab1, tab2 = st.tabs(["Upload Patient Data", "Process Patients & Generate Reports"])
 
 with tab1:
@@ -98,71 +107,36 @@ with tab1:
     
     if submitted:
         if patient_name and uploaded_file is not None:
-            # Read the uploaded image bytes and store it in GridFS
-            file_bytes = uploaded_file.read()
-            image_id = fs.put(file_bytes, filename=uploaded_file.name, content_type=uploaded_file.type)
-            
-            # Insert patient details along with image reference
-            patient_doc = {
-                "name": patient_name,
-                "age": patient_age,
-                "upload_time": datetime.utcnow(),
-                "image_id": image_id
-            }
-            patients_collection.insert_one(patient_doc)
-            st.success(f"Patient {patient_name} and image uploaded successfully!")
+            try:
+                file_bytes = uploaded_file.read()
+                image_id = fs.put(file_bytes, filename=uploaded_file.name, content_type=uploaded_file.type)
+                patient_doc = {"name": patient_name, "age": patient_age, "upload_time": datetime.utcnow(), "image_id": image_id}
+                patients_collection.insert_one(patient_doc)
+                st.success(f"Patient {patient_name} and image uploaded successfully!")
+            except Exception as e:
+                st.error(f"Error saving data: {e}")
         else:
             st.error("Please provide all required fields.")
 
 with tab2:
     st.header("Process Patients and Generate Reports")
     patients = list(patients_collection.find())
-    
     if patients:
         for patient in patients:
             st.subheader(f"Patient: {patient['name']}")
             try:
-                # Retrieve the image from GridFS
                 file_data = fs.get(patient['image_id']).read()
             except Exception as e:
                 st.error(f"Error retrieving image for {patient['name']}: {e}")
                 continue
-            
-            # Process the image for classification
             x, rgb_img = process_image_file(file_data)
-            
-            # Run the classification model on the image
             prediction = model.predict(x)
-            # Example threshold-based result; adjust as needed:
             result = "Positive" if prediction[0][0] > 0.5 else "Negative"
             confidence = float(prediction[0][0])
-            
             st.image(rgb_img, caption="X-ray Image", use_column_width=True)
             st.write(f"Classification: **{result}** with confidence **{confidence:.2f}**")
-            
-            # Optionally compute integrated gradients (for further insights)
-            st.write("Computing Integrated Gradients...")
-            ig_map = integrated_gradients(model, x, target_class_idx=0, steps=50)
-            st.write("Integrated Gradients computed.")
-            
-            # Log classification results to MongoDB
-            classification_doc = {
-                "patient_id": patient["_id"],
-                "patient_name": patient["name"],
-                "timestamp": datetime.utcnow(),
-                "result": result,
-                "confidence": confidence
-            }
-            classifications_collection.insert_one(classification_doc)
-            
-            # Generate a PDF report
             pdf_data = generate_pdf_report(patient, result, confidence)
-            st.download_button(
-                label="Download Report PDF",
-                data=pdf_data,
-                file_name=f"{patient['name']}_report.pdf",
-                mime="application/pdf"
-            )
+            st.download_button("Download Report PDF", data=pdf_data, file_name=f"{patient['name']}_report.pdf", mime="application/pdf")
             st.markdown("---")
     else:
         st.write("No patient records found.")
