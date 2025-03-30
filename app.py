@@ -22,4 +22,4 @@ selected_complaint = st.radio("Select Complaint Type", complaint_types)
 
 # Navigation Button to visit Gmail
 if st.button("File a Complaint via Gamil"):
-    webbrowser.open_new_tab("https://mail.google.com")
+    webbrowser.open_new_tab("https://gmail.com")
