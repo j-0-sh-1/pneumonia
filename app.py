@@ -10,7 +10,7 @@ from datetime import datetime
 
 # For MongoDB and GridFS
 from pymongo import MongoClient
-import gridfs
+from gridfs import GridFS
 
 # For PDF generation
 from fpdf import FPDF
