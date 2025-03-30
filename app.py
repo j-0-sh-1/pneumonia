@@ -3,22 +3,9 @@ import requests
 
 # Mistral API Key (Replace with your actual API Key)
 MISTRAL_API_KEY = "Xnoij9Emwmr745DUVFfE5s66agi9Gsj3"
-MISTRAL_API_URL ="https://api.mistral.ai/v1/chat/completions"
+MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
 
 # Define complaint categories and corresponding email addresses
-complaint_emails = {
-    "Consumer Complaint": "consumer@legalhelp.com",
-    "Cybercrime": "cybercrime@police.gov",
-    "Workplace Harassment": "hr@company.com",
-    "Legal Notice": "legal@lawfirm.com",
-    "Government Issue": "govhelp@india.gov",
-    "Financial Fraud": "fraudreport@bank.com",
-    "Intellectual Property Violation": "ip@lawfirm.com",
-    "Tenant-Landlord Dispute": "rentals@housing.com",
-    "Environmental Complaint": "environment@ngo.org",
-    "Medical Negligence": "health@hospital.com"
-    
-}
 complaint_emails = {
     "Consumer Complaints": "nationalconsumerhelpline@nic.in",
     "Cybercrime": "cybercrime@police.gov",
@@ -65,5 +52,7 @@ if st.button("Classify Complaint"):
     else:
         st.warning("Please enter a complaint.")
 
-
+# AI Agent Update Box
+st.subheader("AI Agent Update")
+ai_agent_update = st.text_area("AI Agent will provide updates here...")
 
