@@ -15,33 +15,11 @@ complaint_types = [
     "Environmental Complaint"
 ]
 
-def generate_email_body(complaint_type):
-    return f"""
-    Dear [Recipient],
-    
-    I would like to file a {complaint_type} regarding [mention issue briefly].
-    
-    Details:
-    - Name: [Your Name]
-    - Contact: [Your Contact Information]
-    - Description: [Provide full details of the complaint]
-    
-    Kindly address this issue at the earliest.
-    
-    Best Regards,
-    [Your Name]
-    """
-
 st.title("Legal Complaint Filing App")
 
-# Complaint Type Selection
-selected_complaint = st.selectbox("Select Complaint Type", complaint_types)
+# Complaint Type Selection with Breakdown Button
+selected_complaint = st.radio("Select Complaint Type", complaint_types)
 
-def open_gmail():
-    email_body = generate_email_body(selected_complaint)
-    gmail_url = f"https://mail.google.com/mail/u/0/#inbox/?view=cm&fs=1&to=gmail.com&su={selected_complaint} Complaint&body={email_body}"
-    webbrowser.open(gmail_url)
-
-# Button to open Gmail
-if st.button("File Complaint via Gmail"):
-    open_gmail()
+# Navigation Button to visit Gmail
+if st.button("File a Complaint via Gamil"):
+    webbrowser.open_new_tab("https://mail.google.com")
