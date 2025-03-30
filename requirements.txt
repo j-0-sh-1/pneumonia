@@ -1,9 +1,1 @@
 streamlit
-tensorflow
-numpy
-opencv-python
-pandas
-plotly
-pillow
-pymongo
-fpdf
