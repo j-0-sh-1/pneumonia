@@ -39,7 +39,7 @@ selected_complaint = st.selectbox("Select Complaint Type", complaint_types)
 
 def open_gmail():
     email_body = generate_email_body(selected_complaint)
-    gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&to=&su={selected_complaint} Complaint&body={email_body}"
+    gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&to=gmail.com&su={selected_complaint} Complaint&body={email_body}"
     webbrowser.open(gmail_url)
 
 # Button to open Gmail
