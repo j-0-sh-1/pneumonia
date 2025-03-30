@@ -6,5 +6,4 @@ pandas
 plotly
 pillow
 pymongo
-gridfs
 fpdf
