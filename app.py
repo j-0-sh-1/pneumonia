@@ -17,8 +17,7 @@ complaint_emails = {
     "Tenant-Landlord Dispute": "rentals@housing.com",
     "Environmental Complaint": "environment@ngo.org",
     "Medical Negligence": "health@hospital.com"
-    "Human Rights Violations (NHRC)": "covid19.complaints@nhrc.in",
-    "Women’s Safety & Harassment Complaints": "complaints-ncw@nic.in"
+    
 }
 
 # Function to classify complaint using Mistral API
