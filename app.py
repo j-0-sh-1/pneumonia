@@ -8,6 +8,16 @@ from googletrans import Translator
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
+import pytesseract
+import shutil
+
+# Check if Tesseract is installed
+tesseract_path = shutil.which("tesseract")
+if tesseract_path:
+    pytesseract.pytesseract.tesseract_cmd = tesseract_path
+else:
+    raise FileNotFoundError("Tesseract-OCR not found. Ensure it's installed in the environment.")
+
 # API Credentials
 MISTRAL_API_KEY = "Xnoij9Emwmr745DUVFfE5s66agi9Gsj3"
 MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
