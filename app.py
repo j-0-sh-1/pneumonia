@@ -11,7 +11,7 @@ MISTRAL_API_KEY = os.getenv("Xnoij9Emwmr745DUVFfE5s66agi9Gsj3")
 
 # Function to generate legal document using Mistral API
 def generate_legal_text(prompt):
-    url = "https://api.mistral.ai/generate"  # Replace with actual Mistral API URL
+    url = "https://mistral.ai//generate"  # Replace with actual Mistral API URL
     headers = {"Authorization": f"Bearer {MISTRAL_API_KEY}", "Content-Type": "application/json"}
     payload = {"prompt": prompt, "max_tokens": 500}
     response = requests.post(url, headers=headers, json=payload)
