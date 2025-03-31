@@ -3,7 +3,7 @@ from mistralai.client import MistralClient
 
 # Initialize Mistral API Client
 API_KEY = "Xnoij9Emwmr745DUVFfE5s66agi9Gsj3"  # Replace with your actual Mistral API key
-client = MistralClient(api_key=API_KEY)
+client = MistralClient(api_key=Xnoij9Emwmr745DUVFfE5s66agi9Gsj3)
 
 def get_task_algorithm(user_input):
     """Fetches the step-by-step task process using Mistral API."""
