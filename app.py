@@ -9,7 +9,7 @@ MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
 # --- STREAMLIT UI ---
 st.title("📑 Legal Issue Classifier")
 st.write("Enter your legal issue, and we'll determine the appropriate complaint format.")
-
+#check there is the compoliant 
 # --- USER INPUT ---
 user_input = st.text_area("📝 Describe your issue:", height=150)
 
