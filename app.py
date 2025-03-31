@@ -7,7 +7,7 @@ from mistralai.client import MistralClient
 MISTRAL_API_KEY = os.environ.get("Xnoij9Emwmr745DUVFfE5s66agi9Gsj3")
 
 # Initialize Mistral Client
-client = MistralClient(api_key=Xnoij9Emwmr745DUVFfE5s66agi9Gsj3)
+client = MistralClient(api_key="Xnoij9Emwmr745DUVFfE5s66agi9Gsj3")
 
 # Complaint Categories & Email Mapping
 COMPLAINT_EMAILS = {
