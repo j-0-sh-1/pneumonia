@@ -1,6 +1,10 @@
 import streamlit as st
 import requests
 import json
+import streamlit as st
+st.title("Test App")
+st.write("Streamlit is running successfully!")
+
 
 # --- MISTRAL API CONFIG ---
 MISTRAL_API_KEY = "Xnoij9Emwmr745DUVFfE5s66agi9Gsj3"
