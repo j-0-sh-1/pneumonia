@@ -12,31 +12,31 @@ from PIL import Image
 load_dotenv()
 MISTRAL_API_KEY = os.getenv("Xnoij9Emwmr745DUVFfE5s66agi9Gsj3")  # Set API key in .env
 
-# Set Tesseract OCR Path (For Windows, change accordingly)
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"  # Modify this path if needed
+# Set Tesseract OCR Path for MacOS and Streamlit Cloud
+if os.name == "posix":  # MacOS/Linux
+    tesseract_path = "/usr/local/bin/tesseract"
+else:  # Windows
+    tesseract_path = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
-# Initialize translator
+# Check if Tesseract is installed
+if os.path.exists(tesseract_path):
+    pytesseract.pytesseract.tesseract_cmd = tesseract_path
+else:
+    st.error("Tesseract OCR not found! Install using 'brew install tesseract' on MacOS.")
+
+# Initialize Google Translator
 translator = Translator()
 
 # ---- FUNCTION TO GENERATE TEXT USING AI ----
 def generate_legal_text(prompt):
     url = "https://api.mistral.ai/v1/completions"
-    headers = {
-        "Authorization": f"Bearer {MISTRAL_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "model": "mistral-7b",  # Adjust model if needed
-        "prompt": prompt,
-        "max_tokens": 500
-    }
+    headers = {"Authorization": f"Bearer {MISTRAL_API_KEY}", "Content-Type": "application/json"}
+    payload = {"model": "mistral-7b", "prompt": prompt, "max_tokens": 500}
     
     response = requests.post(url, headers=headers, json=payload)
-    
     if response.status_code == 200:
         return response.json().get("choices", [{}])[0].get("text", "Error: No text returned.")
-    else:
-        return "Error: API request failed."
+    return "Error: API request failed."
 
 # ---- FUNCTION TO CREATE PDF ----
 def create_pdf(text, filename):
@@ -44,10 +44,9 @@ def create_pdf(text, filename):
     os.makedirs("downloads", exist_ok=True)
     c = canvas.Canvas(pdf_path, pagesize=A4)
     c.drawString(100, 800, "Generated Legal Document")
-    
-    text_lines = text.split("\n")
+
     y_position = 780
-    for line in text_lines:
+    for line in text.split("\n"):
         if y_position < 50:
             c.showPage()
             y_position = 800
@@ -59,23 +58,19 @@ def create_pdf(text, filename):
 
 # ---- FUNCTION TO EXTRACT TEXT FROM IMAGE ----
 def extract_text_from_image(image):
-    extracted_text = pytesseract.image_to_string(image, lang="hin+tam+eng")  # Extract Hindi, Tamil, and English
-    return extracted_text.strip()
+    return pytesseract.image_to_string(image, lang="hin+tam+eng").strip()
 
 # ---- FUNCTION TO TRANSLATE TEXT ----
 def translate_text(text, target_language):
     try:
-        translated = translator.translate(text, dest=target_language)
-        return translated.text
+        return translator.translate(text, dest=target_language).text
     except Exception as e:
         return f"Translation Error: {str(e)}"
 
-# ---- FUNCTION TO SUMMARIZE TEXT ---- (Simple Extractive Summarization)
+# ---- FUNCTION TO SUMMARIZE TEXT ----
 def summarize_text(text):
     sentences = text.split(". ")
-    if len(sentences) > 3:
-        return ". ".join(sentences[:3]) + "..."
-    return text  # Return as is if text is short
+    return ". ".join(sentences[:3]) + "..." if len(sentences) > 3 else text
 
 # ---- STREAMLIT UI ----
 st.title("Multilingual Legal Document & OCR Interface")
@@ -94,8 +89,7 @@ details = st.text_area("Describe Your Complaint/Request")
 
 if st.button("Generate Document"):
     if name and address and details:
-        prompt = f"Generate a {doc_type} for {name}, living at {address}. Details: {details}"
-        generated_text = generate_legal_text(prompt)
+        generated_text = generate_legal_text(f"Generate a {doc_type} for {name}, living at {address}. Details: {details}")
         pdf_path = create_pdf(generated_text, "legal_document")
         
         st.success("Document generated successfully!")
@@ -106,7 +100,7 @@ if st.button("Generate Document"):
 
 # ---- OCR IMAGE UPLOAD ----
 st.header("Text Extraction from Image (OCR)")
-uploaded_image = st.file_uploader("Upload an image containing text (Hindi, Tamil, or English)", type=["png", "jpg", "jpeg"])
+uploaded_image = st.file_uploader("Upload an image (Hindi, Tamil, or English)", type=["png", "jpg", "jpeg"])
 
 if uploaded_image:
     image = Image.open(uploaded_image)
@@ -117,29 +111,17 @@ if uploaded_image:
     st.write(extracted_text)
 
     # Translation
-    target_language = lang_map[language]
-    translated_text = translate_text(extracted_text, target_language)
+    translated_text = translate_text(extracted_text, lang_map[language])
     st.subheader(f"Translated Text ({language})")
     st.write(translated_text)
 
     # Summarization
-    summarized_text = summarize_text(translated_text)
     st.subheader("Summarized Text")
-    st.write(summarized_text)
+    st.write(summarize_text(translated_text))
 
 # ---- EMAIL LINK ----
 st.header("Email Interface")
-st.write("Click the button below to access Gmail.")
-
 if st.button("Open Gmail"):
     st.markdown("[Click here to open Gmail](https://mail.google.com/)", unsafe_allow_html=True)
 
-# ---- FOOTER ----
 st.write("Developed by AI & ML Enthusiast 🚀")
-
-
-
-
-
-
-
