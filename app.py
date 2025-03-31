@@ -8,16 +8,6 @@ from googletrans import Translator
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
-import pytesseract
-import shutil
-
-# Check if Tesseract is installed
-tesseract_path = shutil.which("tesseract")
-if tesseract_path:
-    pytesseract.pytesseract.tesseract_cmd = tesseract_path
-else:
-    raise FileNotFoundError("Tesseract-OCR not found. Ensure it's installed in the environment.")
-
 # API Credentials
 MISTRAL_API_KEY = "Xnoij9Emwmr745DUVFfE5s66agi9Gsj3"
 MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
@@ -151,13 +141,27 @@ if "page" in st.session_state:
     elif st.session_state.page == "ocr":
         st.header("\U0001F5BC️ Text Extraction from Image")
         uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
-        
+
+        language = st.selectbox("Select language", ["Hindi", "Tamil", "English", "Bengali", "Telugu", "Gujarati", "Malayalam"])
+
+        language_mapping = {
+            "Hindi": "hin",
+            "Tamil": "tam",
+            "English": "eng",
+            "Bengali": "ben",
+            "Telugu": "tel",
+            "Gujarati": "guj",
+            "Malayalam": "mal"
+        }
+
         if uploaded_image:
             image = Image.open(uploaded_image)
             st.image(image, caption="Uploaded Image", use_column_width=True)
             extracted_text = extract_text_from_image(image)
             st.subheader("Extracted Text")
             st.write(extracted_text)
-            translated_text = translator.translate(extracted_text, dest="en").text
-            st.subheader("Translated Text (English)")
+            
+            selected_language = language_mapping.get(language, "eng")
+            translated_text = translator.translate(extracted_text, src=selected_language, dest="en").text
+            st.subheader(f"Translated Text (English) from {language}")
             st.write(translated_text)
