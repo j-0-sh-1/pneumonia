@@ -76,9 +76,7 @@ if st.button("Analyze Issue"):
 
         response = requests.post(MISTRAL_API_URL, headers=headers, data=json.dumps(payload))
         
-        try:
-            result = response.json()
-            st.write("🔍 Debug API Response:", result)  # Show raw API response
+       # Show raw API response
             
             if "choices" in result:
                 complaint_type = result["choices"][0]["message"]["content"]
