@@ -9,4 +9,4 @@ torchaudio
 reportlab
 requests
 json5
-tesseract-ocr
+
