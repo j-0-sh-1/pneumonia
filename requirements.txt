@@ -10,9 +10,3 @@ reportlab
 requests
 json5
 
-streamlit==1.18.1
-pytesseract==0.3.9
-Pillow==9.0.1
-googletrans==4.0.0-rc1
-reportlab==3.6.11
-requests==2.28.2
