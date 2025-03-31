@@ -20,8 +20,8 @@ st.sidebar.title("ℹ️ Instructions")
 st.sidebar.write("Ask legal questions and receive guidance from the assistant.")
 st.sidebar.markdown("✅ Get step-by-step legal advice\n✅ Receive useful links for action\n✅ Easily reset the chat")
 
-st.title("Legal Navigator Chatbot 🤖⚖️")
-st.write("_Chat with a legal assistant to understand your legal rights._")
+st.title("Justice Bot ⚖️")
+st.write("_Know Your Rights, Take Action._")
 
 # --- SESSION STATE FOR CHAT MEMORY ---
 if "messages" not in st.session_state:
