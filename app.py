@@ -21,6 +21,34 @@ def generate_legal_text(prompt):
         return f"Error: {response.status_code} - {response.text}"
 
 # Function to create a PDF
+def generate_legal_text(prompt):
+    url = "https://api.mistral.ai/v1/completions"  # Update with the correct API URL
+    headers = {
+        "Authorization": f"Bearer {MISTRAL_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": "mistral-7b",  # Replace with the correct model name if needed
+        "prompt": prompt,
+        "max_tokens": 500
+    }
+    
+    response = requests.post(url, headers=headers, json=payload)
+    
+    if response.status_code == 200:
+        return response.json().get("choices", [{}])[0].get("text", "Error: No text returned.")
+    else:
+        return (
+            "Dear Sir/Madam,\n\n"
+            "I am writing to formally submit a complaint regarding [ISSUE].\n"
+            "The details of the complaint are as follows:\n\n"
+            "[Details of complaint]\n\n"
+            "I kindly request that appropriate action be taken at the earliest.\n"
+            "Thank you for your attention.\n\n"
+            "Sincerely,\n"
+            "[Your Name]"
+        )  # Return a sample format if API fails
+
 def create_pdf(text, filename):
     pdf_path = f"downloads/{filename}.pdf"
     os.makedirs("downloads", exist_ok=True)
