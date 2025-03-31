@@ -3,39 +3,40 @@ import pytesseract
 from PIL import Image
 from googletrans import Translator
 from transformers import pipeline
+import os
 
-# Initialize translator and summarizer
+# Set up models
 translator = Translator()
-summarizer = pipeline("summarization")
+summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
 
-# Streamlit UI
-st.set_page_config(page_title="Image Text Extraction & Translation", layout="wide")
-st.title("🖼️ Image Text Extraction, Translation & Summarization")
+# Streamlit page config
+st.set_page_config(page_title="Image OCR & Summarization", layout="wide")
+st.title("📄 Image Text Extraction & Translation Tool")
 
-uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
+# File uploader
+uploaded_file = st.file_uploader("Upload an Image", type=["jpg", "png", "jpeg"])
 
-if uploaded_image:
-    image = Image.open(uploaded_image)
+if uploaded_file:
+    image = Image.open(uploaded_file)
     st.image(image, caption="Uploaded Image", use_column_width=True)
     
-    with st.spinner("Extracting text..."):
-        extracted_text = pytesseract.image_to_string(image, lang="hin+tam+eng").strip()
+    # Extract text from image
+    extracted_text = pytesseract.image_to_string(image, lang="hin+tam+eng").strip()
+    st.subheader("Extracted Text:")
+    st.text_area("", extracted_text, height=200)
     
-    if extracted_text:
-        st.subheader("Extracted Text")
-        st.text_area("", extracted_text, height=150)
-        
-        with st.spinner("Translating text..."):
-            translated_text = translator.translate(extracted_text, dest="en").text
-        
-        st.subheader("Translated Text (English)")
-        st.text_area("", translated_text, height=150)
-        
-        if st.button("Summarize Text"):
-            with st.spinner("Summarizing text..."):
-                summary = summarizer(translated_text, max_length=100, min_length=30, do_sample=False)[0]["summary_text"]
-            
-            st.subheader("Summarized Text")
-            st.write(summary)
-    else:
-        st.warning("No text could be extracted from the image. Try another image.")
+    # Translation
+    target_language = st.selectbox("Translate To", ["en", "hi", "ta"])
+    if st.button("Translate Text"):
+        translated_text = translator.translate(extracted_text, dest=target_language).text
+        st.subheader("Translated Text:")
+        st.text_area("", translated_text, height=200)
+    
+    # Summarization
+    if st.button("Summarize Text"):
+        if extracted_text:
+            summary = summarizer(extracted_text, max_length=150, min_length=50, do_sample=False)[0]['summary_text']
+            st.subheader("Summarized Text:")
+            st.text_area("", summary, height=150)
+        else:
+            st.warning("No text extracted to summarize!")
