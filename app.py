@@ -7,7 +7,7 @@ from reportlab.pdfgen import canvas
 
 # Load API Key from .env file
 load_dotenv()
-MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
+MISTRAL_API_KEY = os.getenv("Xnoij9Emwmr745DUVFfE5s66agi9Gsj3")
 
 # Function to generate legal document using Mistral API
 def generate_legal_text(prompt):
