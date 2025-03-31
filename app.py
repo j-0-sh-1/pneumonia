@@ -1,91 +1,50 @@
-import streamlit as st
-import os
-import requests
-import json
 import pytesseract
 from PIL import Image
 from googletrans import Translator
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
+from transformers import pipeline
+import streamlit as st
 
-# API Credentials
-MISTRAL_API_KEY = "Xnoij9Emwmr745DUVFfE5s66agi9Gsj3"
-MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
+# Configure Tesseract (Ensure it's installed)
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"  # Update this path as needed
 
-# Page Configuration
-st.set_page_config(page_title="Multifunctional Legal Tool", layout="wide")
-translator = Translator()
+# Load summarization model
+summarizer = pipeline("summarization")
 
-def create_pdf(text, filename):
-    pdf_path = f"downloads/{filename}.pdf"
-    os.makedirs("downloads", exist_ok=True)
-    c = canvas.Canvas(pdf_path, pagesize=A4)
-    c.drawString(100, 800, "Generated Legal Document")
-    y_position = 780
-    for line in text.split("\n"):
-        if y_position < 50:
-            c.showPage()
-            y_position = 800
-        c.drawString(50, y_position, line)
-        y_position -= 20
-    c.save()
-    return pdf_path
+# Function to extract text from image
+def extract_text(image):
+    text = pytesseract.image_to_string(image, lang="hin+tam")
+    return text.strip()
 
-def extract_text_from_image(image):
-    return pytesseract.image_to_string(image, lang="hin+tam+eng").strip()
+# Function to translate text to English
+def translate_text(text, dest_lang="en"):
+    translator = Translator()
+    translated = translator.translate(text, dest=dest_lang)
+    return translated.text
 
-def classify_legal_issue(user_input):
-    headers = {"Authorization": f"Bearer {MISTRAL_API_KEY}", "Content-Type": "application/json"}
-    prompt = f"Classify the following legal issue into a complaint type: {user_input}\nOptions: Consumer Complaint, RTI Request, Legal Notice, Police Complaint, Academic Grievance, Workplace Harassment Complaint."
-    payload = {"model": "mistral-medium", "messages": [{"role": "user", "content": prompt}]}
-    response = requests.post(MISTRAL_API_URL, headers=headers, data=json.dumps(payload))
-    result = response.json()
-    return result.get("choices", [{}])[0].get("message", {}).get("content", "Error analyzing the issue.")
+# Function to summarize text
+def summarize_text(text, max_length=100):
+    if len(text.split()) > 30:  # Only summarize if text is long enough
+        summary = summarizer(text, max_length=max_length, min_length=50, do_sample=False)
+        return summary[0]['summary_text']
+    return text  # Return original if too short
 
-def classify_article(user_input):
-    headers = {"Authorization": f"Bearer {MISTRAL_API_KEY}", "Content-Type": "application/json"}
-    prompt = f"Analyze the legal issue: {user_input} and suggest related articles from the Indian Constitution."
-    payload = {"model": "mistral-medium", "messages": [{"role": "user", "content": prompt}]}
-    response = requests.post(MISTRAL_API_URL, headers=headers, data=json.dumps(payload))
-    result = response.json()
-    return result.get("choices", [{}])[0].get("message", {}).get("content", "Error retrieving related articles.")
+# Streamlit UI
+st.title("📷 Image Text Extraction & Summarization Tool")
 
-def main():
-    st.title("🏛️ – Know Your Rights, Take Action")
+uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
+
+if uploaded_image:
+    image = Image.open(uploaded_image)
+    st.image(image, caption="Uploaded Image", use_column_width=True)
     
-    col1, col2, col3 = st.columns(3)
+    extracted_text = extract_text(image)
+    st.subheader("Extracted Text")
+    st.write(extracted_text)
     
-    with col1:
-        if st.button("⚖️ Classify Issue & Articles", use_container_width=True):
-            st.session_state.page = "classifier"
+    translated_text = translate_text(extracted_text)
+    st.subheader("Translated Text (English)")
+    st.write(translated_text)
     
-    with col2:
-        if st.button("📧 Email Drafting Assistant", use_container_width=True):
-            st.session_state.page = "email_assistant"
-    
-    with col3:
-        if st.button("🖼️ Image Extraction", use_container_width=True):
-            st.session_state.page = "ocr"
-    
-    if "page" in st.session_state:
-        if st.session_state.page == "email_assistant":
-            st.header("📧 Email Drafting Assistant")
-            st.subheader("Document Format & Responsive Page")
-            name = st.text_input("Your Name")
-            address = st.text_area("Your Address")
-            details = st.text_area("Describe Your Complaint/Request")
-            
-            if st.button("Generate Document"):
-                if name and address and details:
-                    generated_text = f"Legal Document for {name} at {address}\nDetails: {details}"
-                    pdf_path = create_pdf(generated_text, "legal_document")
-                    st.success("Document generated successfully!")
-                    with open(pdf_path, "rb") as file:
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            st.download_button("Download PDF", file, file_name="legal_document.pdf", mime="application/pdf")
-                        with col2:
-                            st.markdown("[File a Complaint via Email](https://mail.google.com) 📩", unsafe_allow_html=True)
-
-if __name__ == "__main__":
-    main()
+    summarized_text = summarize_text(translated_text)
+    st.subheader("Summarized Text")
+    st.write(summarized_text)
