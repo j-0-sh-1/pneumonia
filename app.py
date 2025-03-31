@@ -16,12 +16,12 @@ MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
 st.set_page_config(page_title="Multifunctional Legal Tool", layout="wide")
 translator = Translator()
 
-# Function to create a PDF
+# Function to create a formatted complaint PDF
 def create_pdf(text, filename):
     pdf_path = f"downloads/{filename}.pdf"
     os.makedirs("downloads", exist_ok=True)
     c = canvas.Canvas(pdf_path, pagesize=A4)
-    c.drawString(100, 800, "Generated Legal Document")
+    c.drawString(100, 800, "Legal Complaint Document")
     y_position = 780
     for line in text.split("\n"):
         if y_position < 50:
@@ -45,14 +45,25 @@ def classify_legal_issue(user_input):
     result = response.json()
     return result.get("choices", [{}])[0].get("message", {}).get("content", "Error analyzing the issue.")
 
-# Function to classify legal articles
-def classify_article(user_input):
-    headers = {"Authorization": f"Bearer {MISTRAL_API_KEY}", "Content-Type": "application/json"}
-    prompt = f"Analyze the legal issue: {user_input} and suggest related articles from the Indian Constitution."
-    payload = {"model": "mistral-medium", "messages": [{"role": "user", "content": prompt}]}
-    response = requests.post(MISTRAL_API_URL, headers=headers, data=json.dumps(payload))
-    result = response.json()
-    return result.get("choices", [{}])[0].get("message", {}).get("content", "Error retrieving related articles.")
+# Function to generate formatted complaint text
+def generate_complaint_text(name, address, issue, details):
+    return f"""
+To Whom It May Concern,
+
+Subject: {issue} Complaint
+
+Dear Sir/Madam,
+
+I, {name}, residing at {address}, am writing to formally lodge a complaint regarding {issue}. Below are the details:
+
+Details of Complaint:
+{details}
+
+I kindly request you to take appropriate action at the earliest.
+
+Sincerely,
+{name}
+"""
 
 # Streamlit App
 st.title("🏛️ Know Your Rights, Take Action")
@@ -100,18 +111,19 @@ if "page" in st.session_state:
         st.header("📧 Email Drafting Assistant")
         name = st.text_input("Your Name")
         address = st.text_area("Your Address")
+        issue = st.text_input("Complaint Type (e.g., Consumer Complaint, RTI Request)")
         details = st.text_area("Describe Your Complaint/Request")
         
         if st.button("Generate Document"):
-            if name and address and details:
-                generated_text = f"Legal Document for {name} at {address}\nDetails: {details}"
-                pdf_path = create_pdf(generated_text, "legal_document")
+            if name and address and issue and details:
+                complaint_text = generate_complaint_text(name, address, issue, details)
+                pdf_path = create_pdf(complaint_text, "legal_complaint")
                 st.success("Document generated successfully!")
                 
                 with open(pdf_path, "rb") as file:
                     col1, col2 = st.columns(2)
                     with col1:
-                        st.download_button("Download PDF", file, file_name="legal_document.pdf", mime="application/pdf")
+                        st.download_button("Download PDF", file, file_name="legal_complaint.pdf", mime="application/pdf")
                     with col2:
                         st.markdown('<a href="https://mail.google.com" target="_blank" style="text-decoration:none;"><button style="background-color:#ff4b4b; color:white; padding:10px 15px; border:none; border-radius:5px; cursor:pointer;">📩 File a Complaint via Email</button></a>', unsafe_allow_html=True)
             else:
@@ -130,4 +142,3 @@ if "page" in st.session_state:
             translated_text = translator.translate(extracted_text, dest="en").text
             st.subheader("Translated Text (English)")
             st.write(translated_text)
-
