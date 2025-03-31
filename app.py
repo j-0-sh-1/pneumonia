@@ -1,87 +1,68 @@
 import streamlit as st
-import requests
+import openai
 import os
-from dotenv import load_dotenv
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
 
-# Load API Key from .env file
-load_dotenv()
-MISTRAL_API_KEY = os.getenv("Xnoij9Emwmr745DUVFfE5s66agi9Gsj3")
+# Load API Key (Ensure you have OpenAI API key set as an environment variable)
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# Function to generate legal document using Mistral API
-def generate_legal_text(prompt):
-    url = "https://mistral.ai//generate"  # Replace with actual Mistral API URL
-    headers = {"Authorization": f"Bearer {MISTRAL_API_KEY}", "Content-Type": "application/json"}
-    payload = {"prompt": prompt, "max_tokens": 500}
-    response = requests.post(url, headers=headers, json=payload)
-    if response.status_code == 200:
-        return response.json().get("text", "Error: No response from AI")
-    else:
-        return f"Error: {response.status_code} - {response.text}"
-
-# Function to create a PDF
-def generate_legal_text(prompt):
-    url = "https://api.mistral.ai/v1/completions"  # Update with the correct API URL
-    headers = {
-        "Authorization": f"Bearer {MISTRAL_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "model": "mistral-7b",  # Replace with the correct model name if needed
-        "prompt": prompt,
-        "max_tokens": 500
+# Function to classify complaint type and find authority email
+def classify_complaint(complaint_text):
+    categories = {
+        "police": "police-helpdesk@gov.com",
+        "RTI": "rti-officer@gov.com",
+        "consumer": "consumer-forum@gov.com"
     }
     
-    response = requests.post(url, headers=headers, json=payload)
+    # Ask AI to classify the complaint
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[
+            {"role": "system", "content": "Classify the complaint into one of these categories: police, RTI, consumer."},
+            {"role": "user", "content": complaint_text}
+        ]
+    )
     
-    if response.status_code == 200:
-        return response.json().get("choices", [{}])[0].get("text", "Error: No text returned.")
-    else:
-        return (
-            "Dear Sir/Madam,\n\n"
-            "I am writing to formally submit a complaint regarding [ISSUE].\n"
-            "The details of the complaint are as follows:\n\n"
-            "[Details of complaint]\n\n"
-            "I kindly request that appropriate action be taken at the earliest.\n"
-            "Thank you for your attention.\n\n"
-            "Sincerely,\n"
-            "[Your Name]"
-        )  # Return a sample format if API fails
+    classification = response['choices'][0]['message']['content'].strip().lower()
+    return classification, categories.get(classification, "unknown@example.com")
 
-def create_pdf(text, filename):
-    pdf_path = f"downloads/{filename}.pdf"
-    os.makedirs("downloads", exist_ok=True)
-    c = canvas.Canvas(pdf_path, pagesize=A4)
-    c.drawString(100, 800, "Generated Legal Document")
-    text_lines = text.split("\n")
-    y_position = 780
-    for line in text_lines:
-        if y_position < 50:
-            c.showPage()
-            y_position = 800
-        c.drawString(50, y_position, line)
-        y_position -= 20
-    c.save()
-    return pdf_path
+# Function to generate AI-generated step-by-step email guide
+def generate_email_guide(complaint_type, email_id, details):
+    prompt = f"""
+    Generate a step-by-step guide to writing an email complaint for {complaint_type}.
+    The email should be sent to {email_id}.
+    The complaint details: {details}
+    Provide a structured paragraph explaining the steps.
+    """
+    
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[
+            {"role": "system", "content": "You are an AI assistant that provides structured step-by-step guides."},
+            {"role": "user", "content": prompt}
+        ]
+    )
+    
+    return response['choices'][0]['message']['content'].strip()
 
 # Streamlit UI
-st.title("Legal Document Generator")
-st.write("Generate legal documents such as police complaints, RTI requests, consumer complaints, etc.")
+st.title("AI Email Complaint Assistant 📧")
+st.write("Enter your complaint details, and the AI will guide you on how to draft and send an email.")
 
-# User input fields
-document_type = st.selectbox("Select Document Type", ["Police Complaint", "RTI Request", "Consumer Complaint", "Legal Notice"])
-name = st.text_input("Your Name")
-address = st.text_area("Your Address")
-details = st.text_area("Describe Your Complaint/Request")
+# User Input
+complaint_text = st.text_area("Enter Complaint Details")
 
-if st.button("Generate Document"):
-    if name and address and details:
-        prompt = f"Generate a {document_type} for {name}, living at {address}. Details: {details}"
-        generated_text = generate_legal_text(prompt)
-        pdf_path = create_pdf(generated_text, "legal_document")
-        st.success("Document generated successfully!")
-        with open(pdf_path, "rb") as file:
-            st.download_button("Download PDF", file, file_name="legal_document.pdf", mime="application/pdf")
+if st.button("Generate Email Guide"):
+    if complaint_text:
+        complaint_type, email_id = classify_complaint(complaint_text)
+        email_guide = generate_email_guide(complaint_type, email_id, complaint_text)
+        
+        st.subheader("Step-by-Step Email Guide:")
+        st.write(email_guide)
+        
+        st.subheader("Complaint Type:")
+        st.write(complaint_type.title())
+        
+        st.subheader("Authority Email ID:")
+        st.write(email_id)
     else:
-        st.error("Please fill in all fields.")
+        st.error("Please enter complaint details.")
