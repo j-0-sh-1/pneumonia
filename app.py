@@ -1,77 +1,78 @@
 import streamlit as st
 import requests
-import json
+import os
+from dotenv import load_dotenv
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
 
-# --- MISTRAL API CONFIG ---
-MISTRAL_API_KEY = "your_api_key_here"  # Replace with your Mistral API Key
-MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"  # Fixed URL
+def open_gmail():
+    gmail_url = "https://mail.google.com/"
+    st.markdown(f"[Click here to open Gmail]({gmail_url})", unsafe_allow_html=True)
 
-# --- STREAMLIT UI ---
-st.title("📧 AI Email Drafting Assistant")
-st.write("Let AI guide you in composing an email step-by-step.")
+# Load API Key from .env file
+load_dotenv()
+MISTRAL_API_KEY = os.getenv("Xnoij9Emwmr745DUVFfE5s66agi9Gsj3")
 
-# --- SESSION STATE FOR CHAT MEMORY ---
-if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {"role": "system", "content": "You are an AI assistant that helps users compose emails by guiding them step by step."}
-    ]
-
-# --- USER INPUT FORM ---
-st.subheader("📌 Fill in Email Details")
-to_email = st.text_input("To:")
-subject = st.text_input("Subject:")
-body = st.text_area("Body:")
-
-if st.button("✉️ Generate Email Draft"):
-    if not to_email or not subject or not body:
-        st.warning("⚠️ Please fill in all fields before submitting.")
+# Function to generate legal document using Mistral API
+def generate_legal_text(prompt):
+    url = "https://mistral.ai/v1/completions"
+    headers = {
+        "Authorization": f"Bearer {MISTRAL_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": "mistral-7b",
+        "prompt": prompt,
+        "max_tokens": 500
+    }
+    
+    response = requests.post(url, headers=headers, json=payload)
+    
+    if response.status_code == 200:
+        return response.json().get("choices", [{}])[0].get("text", "Error: No text returned.")
     else:
-        user_input = f"Compose an email with:\nTo: {to_email}\nSubject: {subject}\nBody: {body}"
-        st.session_state.messages.append({"role": "user", "content": user_input})
+        return "Error: Unable to generate document. Please try again."
 
-        # Call Mistral API
-        headers = {
-            "Authorization": f"Bearer {MISTRAL_API_KEY}",
-            "Content-Type": "application/json"
-        }
-        
-        payload = {
-            "model": "mistral-medium",  # Select the model
-            "messages": st.session_state.messages  # Send chat history
-        }
-        
-        response = requests.post(MISTRAL_API_URL, headers=headers, data=json.dumps(payload))
+# Function to create a PDF
+def create_pdf(text, filename):
+    pdf_path = f"downloads/{filename}.pdf"
+    os.makedirs("downloads", exist_ok=True)
+    c = canvas.Canvas(pdf_path, pagesize=A4)
+    c.drawString(100, 800, "Generated Legal Document")
+    text_lines = text.split("\n")
+    y_position = 780
+    for line in text_lines:
+        if y_position < 50:
+            c.showPage()
+            y_position = 800
+        c.drawString(50, y_position, line)
+        y_position -= 20
+    c.save()
+    return pdf_path
 
-        # ✅ API STATUS CHECK
-        st.write("🔍 API Status Code:", response.status_code)
+# Streamlit UI
+st.title("Legal Document & Email Assistant")
+st.write("Generate legal documents and access Gmail easily.")
 
-        if response.status_code == 200:
-            try:
-                result = response.json()
-                if "choices" in result:
-                    bot_reply = result["choices"][0]["message"]["content"]
-                    st.session_state.messages.append({"role": "assistant", "content": bot_reply})
+# User input fields
+document_type = st.selectbox("Select Document Type", ["Police Complaint", "RTI Request", "Consumer Complaint", "Legal Notice"])
+name = st.text_input("Your Name")
+address = st.text_area("Your Address")
+details = st.text_area("Describe Your Complaint/Request")
 
-                    # --- DISPLAY RESPONSE ---
-                    st.subheader("📩 AI-Generated Email Draft")
-                    st.write(f"**To:** {to_email}")
-                    st.write(f"**Subject:** {subject}")
-                    st.write(f"**Body:**\n{bot_reply}")
+if st.button("Generate Document"):
+    if name and address and details:
+        prompt = f"Generate a {document_type} for {name}, living at {address}. Details: {details}"
+        generated_text = generate_legal_text(prompt)
+        pdf_path = create_pdf(generated_text, "legal_document")
+        st.success("Document generated successfully!")
+        with open(pdf_path, "rb") as file:
+            st.download_button("Download PDF", file, file_name="legal_document.pdf", mime="application/pdf")
+    else:
+        st.error("Please fill in all fields.")
 
-                    # --- OPEN GMAIL LINK ---
-                    st.write("💡 Suggested Action: Open Gmail to finalize your draft")
-                    st.markdown('[📬 Click to Open Gmail](https://mail.google.com)')
-
-                else:
-                    st.error("⚠️ Unexpected API response format.")
-            except json.JSONDecodeError:
-                st.error("⚠️ Error: Unable to parse API response. Check API key & retry.")
-        else:
-            st.error(f"❌ API Error {response.status_code}: {response.text}")
-
-# --- RESET BUTTON TO CLEAR CHAT ---
-if st.button("🔄 Reset Chat"):
-    st.session_state.messages = [
-        {"role": "system", "content": "You are an AI assistant that helps users compose emails by guiding them step by step."}
-    ]
-    st.success("✅ Chat history cleared!")
+# Email Section
+st.subheader("Email Interface")
+st.write("Click the button below to access Gmail.")
+if st.button("Open Gmail"):
+    open_gmail()
