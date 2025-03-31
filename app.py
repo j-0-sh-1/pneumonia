@@ -45,6 +45,15 @@ def classify_legal_issue(user_input):
     result = response.json()
     return result.get("choices", [{}])[0].get("message", {}).get("content", "Error analyzing the issue.")
 
+# Function to classify legal articles
+def classify_article(user_input):
+    headers = {"Authorization": f"Bearer {MISTRAL_API_KEY}", "Content-Type": "application/json"}
+    prompt = f"Find the most relevant constitutional articles for the following legal issue: {user_input}."
+    payload = {"model": "mistral-medium", "messages": [{"role": "user", "content": prompt}]}
+    response = requests.post(MISTRAL_API_URL, headers=headers, data=json.dumps(payload))
+    result = response.json()
+    return result.get("choices", [{}])[0].get("message", {}).get("content", "Error retrieving articles.")
+
 # Function to generate formatted complaint text
 def generate_complaint_text(name, address, issue, details):
     return f"""
@@ -66,7 +75,7 @@ Sincerely,
 """
 
 # Streamlit App
-st.title("🏛️ Know Your Rights, Take Action")
+st.title("\U0001F3DB️ Know Your Rights, Take Action")
 
 col1, col2, col3 = st.columns(3)
 
@@ -75,11 +84,11 @@ with col1:
         st.session_state.page = "classifier"
 
 with col2:
-    if st.button("📧 Email Drafting Assistant", use_container_width=True):
+    if st.button("\U0001F4E7 Email Drafting Assistant", use_container_width=True):
         st.session_state.page = "email_assistant"
 
 with col3:
-    if st.button("🖼️ Image Extraction", use_container_width=True):
+    if st.button("\U0001F5BC️ Image Extraction", use_container_width=True):
         st.session_state.page = "ocr"
 
 if "page" in st.session_state:
@@ -108,7 +117,7 @@ if "page" in st.session_state:
                     st.warning("Please enter a description before submitting.")
     
     elif st.session_state.page == "email_assistant":
-        st.header("📧 Email Drafting Assistant")
+        st.header("\U0001F4E7 Email Drafting Assistant")
         name = st.text_input("Your Name")
         address = st.text_area("Your Address")
         issue = st.text_input("Complaint Type (e.g., Consumer Complaint, RTI Request)")
@@ -125,12 +134,12 @@ if "page" in st.session_state:
                     with col1:
                         st.download_button("Download PDF", file, file_name="legal_complaint.pdf", mime="application/pdf")
                     with col2:
-                        st.markdown('<a href="https://mail.google.com" target="_blank" style="text-decoration:none;"><button style="background-color:#ff4b4b; color:white; padding:10px 15px; border:none; border-radius:5px; cursor:pointer;">📩 File a Complaint via Email</button></a>', unsafe_allow_html=True)
+                        st.markdown('<a href="https://mail.google.com" target="_blank" style="text-decoration:none;"><button style="background-color:#ff4b4b; color:white; padding:10px 15px; border:none; border-radius:5px; cursor:pointer;">\U0001F4E9 File a Complaint via Email</button></a>', unsafe_allow_html=True)
             else:
                 st.error("Please fill in all fields.")
     
     elif st.session_state.page == "ocr":
-        st.header("🖼️ Text Extraction from Image")
+        st.header("\U0001F5BC️ Text Extraction from Image")
         uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
         
         if uploaded_image:
