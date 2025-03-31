@@ -2,6 +2,8 @@ import streamlit as st
 import requests
 import json
 import streamlit as st
+st.write("API Status Code:", response.status_code)
+
 st.title("Test App")
 st.write("Streamlit is running successfully!")
 
