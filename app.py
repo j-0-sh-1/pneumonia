@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
-MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
+MISTRAL_API_KEY = os.getenv("Xnoij9Emwmr745DUVFfE5s66agi9Gsj3")
 MISTRAL_API_URL = "https://api.mistral.ai/v1/completions"
 
 def classify_text(text, model="mistral-small-latest"):
