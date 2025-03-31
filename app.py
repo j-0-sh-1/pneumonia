@@ -8,9 +8,9 @@ MISTRAL_API_KEY = "Xnoij9Emwmr745DUVFfE5s66agi9Gsj3"
 MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
 
 # --- MONGODB CONFIG ---
-MONGO_URI = "mongodb://localhost:27017"  # Replace with your actual MongoDB URI
-DB_NAME = "legal_assistant"
-COLLECTION_NAME = "complaints"
+MONGO_URI = "MONGO_URI", "mongodb+srv://joshuailangovansamuel:HHXm1xKAsKxZtQ6I@cluster0.pbvcd.mongodb.net/fuel_records?retryWrites=true&w=majority&appName=Cluster0"  # Replace with your actual MongoDB URI
+DB_NAME = "pneumonia"
+COLLECTION_NAME = "classifications"
 
 # --- CONNECT TO MONGODB ---
 client = pymongo.MongoClient(MONGO_URI)
