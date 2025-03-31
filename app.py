@@ -1,52 +1,56 @@
 import streamlit as st
-import openai
+import requests
 import os
 
-# Load API Key (Ensure you have OpenAI API key set as an environment variable)
-OPENAI_API_KEY = os.getenv("Xnoij9Emwmr745DUVFfE5s66agi9Gsj3")
+# Load Mistral API Key (Set this in environment variables)
+MISTRAL_API_KEY = os.getenv(""Xnoij9Emwmr745DUVFfE5s66agi9Gsj3"")
 
-# Function to classify complaint type and find authority email
+# API Request Function
+def mistral_generate(prompt):
+    url = "https://api.mistral.ai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {MISTRAL_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": "mistral-large",
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.7
+    }
+    response = requests.post(url, headers=headers, json=payload)
+    return response.json().get("choices", [{}])[0].get("message", {}).get("content", "Error in AI response")
+
+# Complaint Classification & Email ID Mapping
 def classify_complaint(complaint_text):
     categories = {
         "police": "police-helpdesk@gov.com",
         "RTI": "rti-officer@gov.com",
         "consumer": "consumer-forum@gov.com"
     }
-    
-    # Ask AI to classify the complaint
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[
-            {"role": "system", "content": "Classify the complaint into one of these categories: police, RTI, consumer."},
-            {"role": "user", "content": complaint_text}
-        ]
-    )
-    
-    classification = response['choices'][0]['message']['content'].strip().lower()
+
+    # Ask Mistral API to classify the complaint
+    classification_prompt = f"Classify the following complaint into 'police', 'RTI', or 'consumer':\n\n{complaint_text}"
+    classification = mistral_generate(classification_prompt).strip().lower()
+
     return classification, categories.get(classification, "unknown@example.com")
 
-# Function to generate AI-generated step-by-step email guide
+# Generate Step-by-Step Email Guide
 def generate_email_guide(complaint_type, email_id, details):
     prompt = f"""
-    Generate a step-by-step guide to writing an email complaint for {complaint_type}.
-    The email should be sent to {email_id}.
-    The complaint details: {details}
-    Provide a structured paragraph explaining the steps.
+    You are an AI guide for writing emails. Provide a clear, step-by-step guide for writing a complaint email.
+
+    Complaint Type: {complaint_type}
+    Authority Email ID: {email_id}
+    Complaint Details: {details}
+
+    Steps should be well-structured and easy to follow.
     """
     
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[
-            {"role": "system", "content": "You are an AI assistant that provides structured step-by-step guides."},
-            {"role": "user", "content": prompt}
-        ]
-    )
-    
-    return response['choices'][0]['message']['content'].strip()
+    return mistral_generate(prompt)
 
 # Streamlit UI
 st.title("AI Email Complaint Assistant 📧")
-st.write("Enter your complaint details, and the AI will guide you on how to draft and send an email.")
+st.write("Enter your complaint details, and AI will guide you on how to draft and send an email.")
 
 # User Input
 complaint_text = st.text_area("Enter Complaint Details")
@@ -66,3 +70,5 @@ if st.button("Generate Email Guide"):
         st.write(email_id)
     else:
         st.error("Please enter complaint details.")
+
+
