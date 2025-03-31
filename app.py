@@ -131,5 +131,3 @@ if "page" in st.session_state:
             st.subheader("Translated Text (English)")
             st.write(translated_text)
 
-if __name__ == "__main__":
-    main()
