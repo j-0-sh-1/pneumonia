@@ -7,3 +7,11 @@ torch
 torchvision
 torchaudio
 reportlab
+
+streamlit
+pytesseract
+pillow
+googletrans==4.0.0-rc1
+reportlab
+requests
+json5
