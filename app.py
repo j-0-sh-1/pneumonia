@@ -5,7 +5,6 @@ import streamlit as st
 st.title("Test App")
 st.write("Streamlit is running successfully!")
 
-st.write("API Status Code:", response.status_code)
 
 # --- MISTRAL API CONFIG ---
 MISTRAL_API_KEY = "Xnoij9Emwmr745DUVFfE5s66agi9Gsj3"
