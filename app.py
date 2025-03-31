@@ -1,78 +1,77 @@
 import streamlit as st
-import os
-import pytesseract
-from PIL import Image
-from googletrans import Translator
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
+import requests
+import json
 
-# Set Page Config
-st.set_page_config(page_title="Multifunctional Legal Tool", layout="wide")
+# --- CONFIGURATION ---
+MISTRAL_API_KEY = "Xnoij9Emwmr745DUVFfE5s66agi9Gsj3"
+MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
 
-# Initialize Translator
-translator = Translator()
+# --- STREAMLIT UI ---
+st.set_page_config(page_title="Legal Navigator Chatbot", page_icon="⚖️")
+st.markdown("""
+    <style>
+    .chat-box {border-radius: 10px; padding: 10px; margin-bottom: 5px;}
+    .user-box {background-color: #DCF8C6; align-self: flex-end;}
+    .assistant-box {background-color: #E8E8E8;}
+    </style>
+""", unsafe_allow_html=True)
 
-def create_pdf(text, filename):
-    pdf_path = f"downloads/{filename}.pdf"
-    os.makedirs("downloads", exist_ok=True)
-    c = canvas.Canvas(pdf_path, pagesize=A4)
-    c.drawString(100, 800, "Generated Legal Document")
-    y_position = 780
-    for line in text.split("\n"):
-        if y_position < 50:
-            c.showPage()
-            y_position = 800
-        c.drawString(50, y_position, line)
-        y_position -= 20
-    c.save()
-    return pdf_path
+st.sidebar.title("ℹ️ Instructions")
+st.sidebar.write("Ask legal questions and receive guidance from the assistant.")
+st.sidebar.markdown("✅ Get step-by-step legal advice\n✅ Receive useful links for action\n✅ Easily reset the chat")
 
-def extract_text_from_image(image):
-    return pytesseract.image_to_string(image, lang="hin+tam+eng").strip()
+st.title("Legal Navigator Chatbot 🤖⚖️")
+st.write("_Chat with a legal assistant to understand your legal rights._")
 
-def main():
-    st.title("📜 Multifunctional Legal & OCR Tool")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if st.button("📄 Document Generator", use_container_width=True):
-            st.session_state.page = "document"
-    
-    with col2:
-        if st.button("🖼️ Image Text Extraction", use_container_width=True):
-            st.session_state.page = "ocr"
-    
-    if "page" in st.session_state:
-        if st.session_state.page == "document":
-            st.header("📄 Legal Document Generator")
-            name = st.text_input("Your Name")
-            address = st.text_area("Your Address")
-            details = st.text_area("Describe Your Complaint/Request")
-            
-            if st.button("Generate Document"):
-                if name and address and details:
-                    generated_text = f"Legal Document for {name} at {address}\nDetails: {details}"
-                    pdf_path = create_pdf(generated_text, "legal_document")
-                    st.success("Document generated successfully!")
-                    with open(pdf_path, "rb") as file:
-                        st.download_button("Download PDF", file, file_name="legal_document.pdf", mime="application/pdf")
-                else:
-                    st.error("Please fill in all fields.")
-        
-        elif st.session_state.page == "ocr":
-            st.header("🖼️ Text Extraction from Image")
-            uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
-            
-            if uploaded_image:
-                image = Image.open(uploaded_image)
-                st.image(image, caption="Uploaded Image", use_column_width=True)
-                extracted_text = extract_text_from_image(image)
-                st.subheader("Extracted Text")
-                st.write(extracted_text)
-                translated_text = translator.translate(extracted_text, dest="en").text
-                st.subheader("Translated Text (English)")
-                st.write(translated_text)
+# --- SESSION STATE FOR CHAT MEMORY ---
+if "messages" not in st.session_state:
+    st.session_state.messages = [
+        {"role": "system", "content": "You are a legal assistant that provides guidance on complaints. Offer actionable steps but do not take major actions like submitting forms or sending emails."}
+    ]
 
-if __name__ == "__main__":
-    main()
+# --- DISPLAY CHAT HISTORY ---
+st.subheader("📝 Chat History")
+chat_container = st.container()
+
+for msg in st.session_state.messages:
+    if msg["role"] == "user":
+        chat_container.markdown(f'<div class="chat-box user-box"><b>You:</b> {msg["content"]}</div>', unsafe_allow_html=True)
+    elif msg["role"] == "assistant":
+        chat_container.markdown(f'<div class="chat-box assistant-box"><b>Legal Assistant:</b> {msg["content"]}</div>', unsafe_allow_html=True)
+
+# --- USER INPUT ---
+user_input = st.text_area("🔍 Describe your issue or ask a legal question:", height=150)
+
+if st.button("Send 📨"):
+    if user_input.strip() == "":
+        st.warning("⚠️ Please enter a message before submitting.")
+    else:
+        st.session_state.messages.append({"role": "user", "content": user_input})
+
+        # Call Mistral API
+        headers = {"Authorization": f"Bearer {MISTRAL_API_KEY}", "Content-Type": "application/json"}
+        payload = {"model": "mistral-medium", "messages": st.session_state.messages}
+        response = requests.post(MISTRAL_API_URL, headers=headers, data=json.dumps(payload))
+        result = response.json()
+
+        if "choices" in result:
+            bot_reply = result["choices"][0]["message"]["content"]
+            st.session_state.messages.append({"role": "assistant", "content": bot_reply})
+
+            chat_container.markdown(f'<div class="chat-box assistant-box"><b>Legal Assistant:</b> {bot_reply}</div>', unsafe_allow_html=True)
+
+            # --- ACTION SUGGESTIONS ---
+            with st.expander("💡 Suggested Actions"):
+                if "email" in bot_reply.lower():
+                    st.markdown("📧 [Click to Open Gmail](https://mail.google.com)")
+                if "portal" in bot_reply.lower():
+                    st.markdown("🔗 [Click to Open Legal Portal](https://eservices.tnpolice.gov.in)")
+        else:
+            st.error("❌ Error fetching response. Please try again.")
+
+# --- RESET CHAT BUTTON ---
+if st.button("🔄 Reset Chat"):
+    st.session_state.messages = [
+        {"role": "system", "content": "You are a legal assistant that provides guidance on complaints. Offer actionable steps but do not take major actions like submitting forms or sending emails."}
+    ]
+    st.success("✅ Chat history cleared!")
