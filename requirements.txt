@@ -5,3 +5,9 @@ reportlab
 googletrans==4.0.0-rc1
 pytesseract
 pillow
+
+streamlit
+pytesseract
+opencv-python
+pillow
+googletrans==4.0.0-rc1  # For Translation
