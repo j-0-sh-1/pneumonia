@@ -33,60 +33,61 @@ def extract_text_from_image(image):
 def main():
     st.title("📜 Multifunctional Legal & OCR Tool")
     
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if st.button("📄 Document Generator", use_container_width=True):
-            st.session_state.page = "document"
-    
-    with col2:
-        if st.button("🖼️ Image Text Extraction", use_container_width=True):
-            st.session_state.page = "ocr"
-    
-    if "page" in st.session_state:
-        if st.session_state.page == "document":
-            st.header("📄 Legal Document Generator")
-            name = st.text_input("Your Name")
-            address = st.text_area("Your Address")
-            details = st.text_area("Describe Your Complaint/Request")
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("Classify Issue"):
-                    st.success("Issue classified successfully!")
-            with col2:
-                if st.button("Classify Article"):
-                    st.success("Article classified successfully!")
-            
-            if st.button("Generate Document"):
-                if name and address and details:
-                    generated_text = f"Legal Document for {name} at {address}\nDetails: {details}"
-                    pdf_path = create_pdf(generated_text, "legal_document")
-                    st.success("Document generated successfully!")
-                    
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        with open(pdf_path, "rb") as file:
-                            st.download_button("Download PDF", file, file_name="legal_document.pdf", mime="application/pdf")
-                    with col2:
-                        if st.button("File a Complaint via Email"):
-                            st.success("Complaint filed via Email successfully!")
-                else:
-                    st.error("Please fill in all fields.")
+    # Card 1: Classify Issue & Article Generation
+    with st.container():
+        st.subheader("⚖️ Classify Issue & Article Generation")
+        col1, col2 = st.columns(2)
         
-        elif st.session_state.page == "ocr":
-            st.header("🖼️ Text Extraction from Image")
-            uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
-            
-            if uploaded_image:
-                image = Image.open(uploaded_image)
-                st.image(image, caption="Uploaded Image", use_column_width=True)
-                extracted_text = extract_text_from_image(image)
-                st.subheader("Extracted Text")
-                st.write(extracted_text)
-                translated_text = translator.translate(extracted_text, dest="en").text
-                st.subheader("Translated Text (English)")
-                st.write(translated_text)
+        with col1:
+            if st.button("📝 Classify Issue", use_container_width=True):
+                st.session_state.page = "classify_issue"
+        
+        with col2:
+            if st.button("📑 Classify Article", use_container_width=True):
+                st.session_state.page = "classify_article"
+    
+    st.markdown("---")
+    
+    # Card 2: Document Format
+    with st.container():
+        st.subheader("📄 Legal Document Generator")
+        name = st.text_input("Your Name")
+        address = st.text_area("Your Address")
+        details = st.text_area("Describe Your Complaint/Request")
+        
+        if st.button("Generate Document"):
+            if name and address and details:
+                generated_text = f"Legal Document for {name} at {address}\nDetails: {details}"
+                pdf_path = create_pdf(generated_text, "legal_document")
+                st.success("Document generated successfully!")
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    with open(pdf_path, "rb") as file:
+                        st.download_button("Download PDF", file, file_name="legal_document.pdf", mime="application/pdf")
+                
+                with col2:
+                    if st.button("📧 File a Complaint via Email", use_container_width=True):
+                        st.info("Redirecting to email service...")
+            else:
+                st.error("Please fill in all fields.")
+    
+    st.markdown("---")
+    
+    # Card 3: Image Extraction
+    with st.container():
+        st.subheader("🖼️ Text Extraction from Image")
+        uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
+        
+        if uploaded_image:
+            image = Image.open(uploaded_image)
+            st.image(image, caption="Uploaded Image", use_column_width=True)
+            extracted_text = extract_text_from_image(image)
+            st.subheader("Extracted Text")
+            st.write(extracted_text)
+            translated_text = translator.translate(extracted_text, dest="en").text
+            st.subheader("Translated Text (English)")
+            st.write(translated_text)
 
 if __name__ == "__main__":
     main()
