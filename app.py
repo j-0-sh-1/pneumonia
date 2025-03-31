@@ -3,7 +3,7 @@ import openai
 import os
 
 # Load API Key (Ensure you have OpenAI API key set as an environment variable)
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_API_KEY = os.getenv("Xnoij9Emwmr745DUVFfE5s66agi9Gsj3")
 
 # Function to classify complaint type and find authority email
 def classify_complaint(complaint_text):
