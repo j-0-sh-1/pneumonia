@@ -1,4 +1,4 @@
 streamlit
+reportlab
 requests
-pytesseract
-Pillow
+python-dotenv
