@@ -3,7 +3,7 @@ import requests
 import os
 
 # Load Mistral API Key (Set this in environment variables)
-MISTRAL_API_KEY = os.getenv(""Xnoij9Emwmr745DUVFfE5s66agi9Gsj3"")
+MISTRAL_API_KEY = os.getenv("Xnoij9Emwmr745DUVFfE5s66agi9Gsj3")
 
 # API Request Function
 def mistral_generate(prompt):
