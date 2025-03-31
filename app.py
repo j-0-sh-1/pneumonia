@@ -53,7 +53,11 @@ def create_pdf(text, filename):
 # Streamlit UI
 st.title("Legal Document & Email Assistant")
 st.write("Generate legal documents and access Gmail easily.")
-
+# Email Section
+st.subheader("Email Interface")
+st.write("Click the button below to access Gmail.")
+if st.button("Open Gmail"):
+    open_gmail()
 # User input fields
 document_type = st.selectbox("Select Document Type", ["Police Complaint", "RTI Request", "Consumer Complaint", "Legal Notice"])
 name = st.text_input("Your Name")
@@ -71,8 +75,4 @@ if st.button("Generate Document"):
     else:
         st.error("Please fill in all fields.")
 
-# Email Section
-st.subheader("Email Interface")
-st.write("Click the button below to access Gmail.")
-if st.button("Open Gmail"):
-    open_gmail()
+
