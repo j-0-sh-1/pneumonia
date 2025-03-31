@@ -3,45 +3,41 @@ import requests
 import json
 
 # --- MISTRAL API CONFIG ---
-MISTRAL_API_KEY = "Xnoij9Emwmr745DUVFfE5s66agi9Gsj3"  # Replace with your actual API key
+MISTRAL_API_KEY = "Xnoij9Emwmr745DUVFfE5s66agi9Gsj3"
 MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
 
 # --- STREAMLIT UI ---
-st.title("📑 Legal Issue Classifier")
-st.write("Enter your legal issue, and we'll determine the appropriate complaint format.")
-#check there is the compoliant 
+st.title("Legal Issue Classifier ⚖️")
+st.write("Enter your legal issue, and the system will classify it into a relevant complaint type.")
+
 # --- USER INPUT ---
-user_input = st.text_area("📝 Describe your issue:", height=150)
+user_input = st.text_area("Describe your legal issue:", height=150)
 
 if st.button("Classify Issue"):
-    if not user_input.strip():
-        st.warning("⚠️ Please enter a legal issue before analyzing.")
+    if user_input.strip() == "":
+        st.warning("Please enter a description before submitting.")
     else:
-        analyze_prompt = f"Classify the following legal issue and suggest the best format (Consumer Complaint, RTI Request, Legal Notice, etc.): {user_input}"
-        
+        # --- MISTRAL API CALL ---
         headers = {
             "Authorization": f"Bearer {MISTRAL_API_KEY}",
             "Content-Type": "application/json"
         }
         
-        payload = {
-            "model": "mistral-medium",
-            "messages": [{"role": "user", "content": analyze_prompt}]
-        }
-
-        response = requests.post(MISTRAL_API_URL, headers=headers, data=json.dumps(payload))
+        prompt = f"Classify the following legal issue into a complaint type: {user_input}\nOptions: Consumer Complaint, RTI Request, Legal Notice, Police Complaint, Academic Grievance, Workplace Harassment Complaint."
         
-        try:
-            result = response.json()
-            st.write("🔍 Debug API Response:", result)  # Show raw API response for debugging
-            
-            if "choices" in result:
-                complaint_type = result["choices"][0]["message"]["content"]
-                st.success(f"✅ Your issue is classified as: **{complaint_type}**")
-            elif "error" in result:
-                st.error(f"❌ API Error: {result['error']}")
-            else:
-                st.error("⚠️ Unexpected API response format.")
+        payload = {
+            "model": "mistral-medium",  # Choose an appropriate model
+            "messages": [{"role": "user", "content": prompt}]
+        }
+        
+        response = requests.post(MISTRAL_API_URL, headers=headers, data=json.dumps(payload))
+        result = response.json()
 
-        except Exception as e:
-            st.error(f"❌ JSON Parsing Error: {e}")
+        # --- DISPLAY CLASSIFICATION RESULT ---
+        if "choices" in result:
+            classification_result = result["choices"][0]["message"]["content"]
+            st.subheader("Classification Result:")
+            st.success(classification_result)  # Shows only the classification result
+        else:
+            st.error("Error analyzing the issue. Please try again.")
+
