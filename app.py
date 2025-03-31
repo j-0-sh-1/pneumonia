@@ -3,8 +3,8 @@ import requests
 import json
 
 # --- MISTRAL API CONFIG ---
-MISTRAL_API_KEY = "Xnoij9Emwmr745DUVFfE5s66agi9Gsj3""
-MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
+MISTRAL_API_KEY = "Xnoij9Emwmr745DUVFfE5s66agi9Gsj3"
+MISTRAL_API_URL = "https://mistral.ai//v1/chat/completions"
 
 # --- STREAMLIT UI ---
 st.title("Email Drafting Assistant 📧🤖")
