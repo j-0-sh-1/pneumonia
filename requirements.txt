@@ -2,15 +2,7 @@ streamlit
 pytesseract
 Pillow
 googletrans==4.0.0-rc1
-reportlab
-requests
-
-
-streamlit
-pytesseract
-pillow
-googletrans==4.0.0-rc1
 transformers
 torch
-numpy
-
+sentencepiece
+reportlab
