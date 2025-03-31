@@ -1,36 +1,27 @@
 import streamlit as st
 import requests
 import json
-import os
-from dotenv import load_dotenv
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
 
-# Load API Key from .env file
-load_dotenv()
-MISTRAL_API_KEY = os.getenv("Xnoij9Emwmr745DUVFfE5s66agi9Gsj3")  # Store API key in .env file
+# --- MISTRAL API CONFIG ---
+MISTRAL_API_KEY = "Xnoij9Emwmr745DUVFfE5s66agi9Gsj3"  # Replace with actual API key
 MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
 
 # --- STREAMLIT UI ---
-st.set_page_config(page_title="Legal Navigator Chatbot", layout="wide")
-
 st.title("⚖️ Legal Navigator Chatbot")
-st.write("Chat with the legal assistant to understand your legal rights and generate complaint documents.")
+st.write("Chat with a legal assistant to understand your legal rights.")
 
 # --- SESSION STATE FOR CHAT MEMORY ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "system", "content": "You are a legal assistant that provides guidance on legal complaints. Offer actionable steps but do not take major actions like submitting forms or sending emails."}
+        {"role": "system", "content": "You are a legal assistant that provides guidance on legal issues. Provide clear and actionable advice."}
     ]
 
-# --- CHATBOT INTERFACE ---
-st.subheader("💬 Chat with Legal Assistant")
+# --- USER INPUT ---
+user_input = st.text_area("📝 Describe your issue or ask a legal question:", height=150)
 
-user_input = st.text_area("Describe your issue or ask a legal question:", height=150)
-
-if st.button("Send"):
+if st.button("Send Message"):
     if user_input.strip() == "":
-        st.warning("Please enter a message before submitting.")
+        st.warning("⚠️ Please enter a message before submitting.")
     else:
         # Add user message to session state
         st.session_state.messages.append({"role": "user", "content": user_input})
@@ -42,8 +33,8 @@ if st.button("Send"):
         }
         
         payload = {
-            "model": "mistral-medium",  # Choose an appropriate model
-            "messages": st.session_state.messages  # Send chat history
+            "model": "mistral-medium",
+            "messages": st.session_state.messages
         }
         
         response = requests.post(MISTRAL_API_URL, headers=headers, data=json.dumps(payload))
@@ -54,73 +45,55 @@ if st.button("Send"):
             st.session_state.messages.append({"role": "assistant", "content": bot_reply})
 
             # --- DISPLAY CHAT HISTORY ---
-            st.subheader("📜 Chat History")
+            st.subheader("💬 Chat History")
             for msg in st.session_state.messages:
                 if msg["role"] == "user":
-                    st.write(f"**You:** {msg['content']}")
+                    st.write(f"👤 **You:** {msg['content']}")
                 elif msg["role"] == "assistant":
-                    st.write(f"**Legal Assistant:** {msg['content']}")
+                    st.write(f"🤖 **Legal Assistant:** {msg['content']}")
 
         else:
-            st.error("Error fetching response. Please try again.")
+            st.error("❌ Error fetching response. Please try again.")
+
+# --- ANALYZE ISSUE AND GENERATE COMPLAINT FORMAT ---
+st.subheader("📑 Legal Issue Analysis & Complaint Format")
+
+if st.button("Analyze Issue"):
+    if not user_input.strip():
+        st.warning("⚠️ Please enter a legal issue before analyzing.")
+    else:
+        analyze_prompt = f"Classify the following legal issue and suggest the best format (Consumer Complaint, RTI Request, Legal Notice, etc.): {user_input}"
+        
+        headers = {
+            "Authorization": f"Bearer {MISTRAL_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        
+        payload = {
+            "model": "mistral-medium",
+            "messages": [{"role": "user", "content": analyze_prompt}]
+        }
+
+        response = requests.post(MISTRAL_API_URL, headers=headers, data=json.dumps(payload))
+        
+        try:
+            result = response.json()
+            st.write("🔍 Debug API Response:", result)  # Show raw API response
+            
+            if "choices" in result:
+                complaint_type = result["choices"][0]["message"]["content"]
+                st.success(f"✅ Your issue is classified as: **{complaint_type}**")
+            elif "error" in result:
+                st.error(f"❌ API Error: {result['error']}")
+            else:
+                st.error("⚠️ Unexpected API response format.")
+
+        except Exception as e:
+            st.error(f"❌ JSON Parsing Error: {e}")
 
 # --- RESET BUTTON TO CLEAR CHAT ---
 if st.button("Reset Chat"):
     st.session_state.messages = [
-        {"role": "system", "content": "You are a legal assistant that provides guidance on complaints. Offer actionable steps but do not take major actions like submitting forms or sending emails."}
+        {"role": "system", "content": "You are a legal assistant that provides guidance on legal issues. Provide clear and actionable advice."}
     ]
-    st.success("Chat history cleared!")
-
-# --- ISSUE ANALYSIS & COMPLAINT GENERATOR ---
-st.subheader("📑 Issue Analyzer & Complaint Generator")
-st.write("Analyze your issue and generate a formatted complaint document.")
-
-if st.button("Analyze Issue"):
-    analyze_prompt = f"Classify the following legal issue and suggest the best format (Consumer Complaint, RTI Request, Legal Notice, etc.): {user_input}"
-    
-    headers = {
-        "Authorization": f"Bearer {MISTRAL_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    
-    payload = {
-        "model": "mistral-medium",
-        "messages": [{"role": "user", "content": analyze_prompt}]
-    }
-    
-    response = requests.post(MISTRAL_API_URL, headers=headers, data=json.dumps(payload))
-    result = response.json()
-
-    if "choices" in result:
-        complaint_type = result["choices"][0]["message"]["content"]
-        st.success(f"✅ Your issue is classified as: **{complaint_type}**")
-
-        # Generate Complaint Document
-        def create_pdf(text, filename):
-            pdf_path = f"downloads/{filename}.pdf"
-            os.makedirs("downloads", exist_ok=True)
-            c = canvas.Canvas(pdf_path, pagesize=A4)
-            c.drawString(100, 800, f"{complaint_type} Document")
-
-            text_lines = text.split("\n")
-            y_position = 780
-            for line in text_lines:
-                if y_position < 50:
-                    c.showPage()
-                    y_position = 800
-                c.drawString(50, y_position, line)
-                y_position -= 20
-
-            c.save()
-            return pdf_path
-
-        formatted_complaint = f"Generated {complaint_type} for your issue:\n\n{user_input}"
-        pdf_path = create_pdf(formatted_complaint, "legal_complaint")
-
-        st.subheader("📄 Generated Complaint Document")
-        st.write(formatted_complaint)
-        with open(pdf_path, "rb") as file:
-            st.download_button("📥 Download Complaint PDF", file, file_name="legal_complaint.pdf", mime="application/pdf")
-
-    else:
-        st.error("Error analyzing the issue. Please try again.")
+    st.success("✅ Chat history cleared!")
