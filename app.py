@@ -51,7 +51,7 @@ def classify_article(user_input):
     return result.get("choices", [{}])[0].get("message", {}).get("content", "Error retrieving related articles.")
 
 def main():
-    st.title("📜 Multifunctional Legal & OCR Tool")
+    st.title("🏛️ – Know Your Rights, Take Action")
     
     col1, col2, col3 = st.columns(3)
     
