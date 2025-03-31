@@ -15,3 +15,10 @@ googletrans==4.0.0-rc1
 reportlab
 requests
 json5
+
+streamlit
+pytesseract
+Pillow
+googletrans==4.0.0-rc1
+reportlab
+requests
