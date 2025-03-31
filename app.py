@@ -4,7 +4,7 @@ import pytesseract
 from PIL import Image
 
 # Configure Mistral API
-MISTRAL_API_KEY = "YOUR_MISTRAL_API_KEY"
+MISTRAL_API_KEY = "Xnoij9Emwmr745DUVFfE5s66agi9Gsj3"
 MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
 
 # Define complaint categories and corresponding emails/portals
