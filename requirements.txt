@@ -10,3 +10,5 @@ reportlab
 requests
 json5
 
+pandas
+matplotlib
