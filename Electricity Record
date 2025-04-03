@@ -1,0 +1,81 @@
+import streamlit as st
+import pandas as pd
+import os
+from datetime import datetime
+import matplotlib.pyplot as plt
+
+# Define file path for storing records
+DATA_FILE = "electricity_records.csv"
+
+def load_data():
+    if os.path.exists(DATA_FILE):
+        return pd.read_csv(DATA_FILE)
+    else:
+        return pd.DataFrame(columns=["Date", "Time", "kWh", "Units Spent", "Image Path"])
+
+def save_data(df):
+    df.to_csv(DATA_FILE, index=False)
+
+def calculate_units_spent(df, new_kwh):
+    if not df.empty:
+        last_kwh = df.iloc[-1]['kWh']
+        return max(0, new_kwh - last_kwh)
+    return 0
+
+# Streamlit UI
+st.title("Electricity Reading Tracker")
+
+# File Uploader for images
+uploaded_file = st.file_uploader("Upload meter image", type=["png", "jpg", "jpeg"], key="file_uploader")
+
+df = load_data()
+
+# Input for kWh and date/time
+new_kwh = st.number_input("Enter kWh reading", min_value=0.0, format="%.1f")
+date_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+if st.button("Save Record"):
+    if new_kwh > 0:
+        units_spent = calculate_units_spent(df, new_kwh)
+        image_path = f"uploads/{uploaded_file.name}" if uploaded_file else ""
+        
+        if uploaded_file:
+            os.makedirs("uploads", exist_ok=True)
+            with open(image_path, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+        
+        new_entry = pd.DataFrame([[date_time.split()[0], date_time.split()[1], new_kwh, units_spent, image_path]],
+                                  columns=df.columns)
+        df = pd.concat([df, new_entry], ignore_index=True)
+        save_data(df)
+        st.success("Record saved successfully!")
+        st.experimental_rerun()
+
+# Display previous records
+df_display = df.copy()
+df_display.index += 1
+df_display.drop(columns=["Image Path"], inplace=True)
+st.dataframe(df_display)
+
+# Analysis - Weekly and Monthly Trends
+if not df.empty:
+    st.subheader("Usage Analysis")
+    df['Date'] = pd.to_datetime(df['Date'])
+    df['Week'] = df['Date'].dt.strftime('%Y-%U')
+    df['Month'] = df['Date'].dt.strftime('%Y-%m')
+    
+    weekly_data = df.groupby('Week')['Units Spent'].sum()
+    monthly_data = df.groupby('Month')['Units Spent'].sum()
+    
+    fig, ax = plt.subplots(2, 1, figsize=(8, 6))
+    ax[0].plot(weekly_data.index, weekly_data.values, marker='o', linestyle='-')
+    ax[0].set_title("Weekly Usage")
+    ax[0].set_ylabel("Units Spent")
+    ax[0].grid()
+    
+    ax[1].plot(monthly_data.index, monthly_data.values, marker='o', linestyle='-')
+    ax[1].set_title("Monthly Usage")
+    ax[1].set_ylabel("Units Spent")
+    ax[1].grid()
+    
+    st.pyplot(fig)
